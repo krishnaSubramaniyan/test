@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 
-app.get('/',(req,res) => res.status(200));
+app.get('/',(req,res) => res.status(200).send("hello world"));
 
 app.get('/api/current-year',(req,res)=>{
     res.send(new Date().getFullYear());
