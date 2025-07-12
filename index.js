@@ -4,7 +4,8 @@ const app = express();
 app.get('/',(req,res) => res.status(200).send("hello world"));
 
 app.get('/api/current-year',(req,res)=>{
-    res.send(new Date().getFullYear());
+    const year = new Date().getFullYear()
+    res.send();
 })
 
 const port = process.env.PORT || 8000;
