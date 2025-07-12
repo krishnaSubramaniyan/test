@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 
 app.get('/api/current-year',(req,res)=>{
-    res.send(new Date().getFullYear());
+    res.status(200).send(new Date().getFullYear());
 })
 
 const port = process.env.PORT || 8000;
