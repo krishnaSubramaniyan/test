@@ -1,0 +1,55 @@
+<!-- claude response -->
+<!DOCTYPE html>
+<html>
+  <body>
+    <h3>Current Time:</h3>
+    <pre id="output">Loading...</pre>
+    <script>
+      var data = null;
+      let yearData = JSON.parse(localStorage.getItem('yearData'));
+      const sysDateTime = new Date();
+
+      if(!yearData || (sysDateTime.getTime() > yearData.expiry)){
+	  fetchYear("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
+	  fetchYear("https://timeapi.io/api/Time/current/zone?timeZone=Asia/Kolkata");
+      }
+      else{
+	  document.getElementById("output").textContent = yearData.year;
+      }
+      
+      async function fetchYear(endpoint) {
+	  while (data == null) {
+              try {
+		  const res = await fetch(endpoint);
+		  data  = await res.json();
+		  let year  = null;
+		  /*
+		    wordtimeapi - data.datetime
+		    timeapi     - data.year
+		  */
+		  if(res.url == "http://worldtimeapi.org/api/timezone/Asia/Kolkata"){
+		      console.log("i am worldtimeapi");
+		      year = new Date(data.datetime).getFullYear();
+		  }
+		  else if(res.url == "https://timeapi.io/api/Time/current/zone?timeZone=Asia/Kolkata"){
+		      console.log("i am timeapi");
+		      year = data.year;
+		  }
+		  console.log(res);
+		  console.log(data);
+		  document.getElementById("output").textContent = year;
+		  localStorage.removeItem('yearData');
+		  const obj = {
+		      year   : year,
+		      expiry : (sysDateTime.getTime()+(24*60*60*1000)) //expiry time is one-day
+		  }
+		  localStorage.setItem('yearData',JSON.stringify(obj));
+		  break;
+
+              } catch (e) {}
+	  }
+      }
+      
+    </script>
+  </body>
+</html>
