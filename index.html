@@ -32,6 +32,7 @@
 
               } catch (e) {
 		  requestCount++;
+		  await new Promise(resolve => setTimeout(resolve, 300));
 	      }
 	  }
 	  if(data == null){
