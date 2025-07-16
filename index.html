@@ -14,7 +14,9 @@
       else{
 	  document.getElementById("output").textContent = yearData.year;
       }
-      
+
+
+      //api call
       async function fetchYear(endpoint) {
 	  var requestCount = 0;
 	  while (data == null) {
@@ -25,35 +27,28 @@
 		  const res = await fetch(endpoint);
 		  data  = await res.json();
 		  let year = new Date(data.datetime).getFullYear();
-		 
-		  console.log(res);
-		  console.log(data);
-		  document.getElementById("output").textContent = year;
-		  localStorage.removeItem('yearData');
-		  const obj = {
-		      year   : year,
-		      expiry : (sysDateTime.getTime()+(24*60*60*1000)) //expiry time is one-day
-		  }
-		  localStorage.setItem('yearData',JSON.stringify(obj));
+		  writeYear(year);
 		  break;
 
               } catch (e) {
 		  requestCount++;
 	      }
-
-	      if(data == null){
-		  const year = new Date().getFullYear();
-		  document.getElementById("output").textContent = year;
-		  localStorage.removeItem('yearData');
-		  const obj = {
-		      year   : year,
-		      expiry : (sysDateTime.getTime()+(24*60*60*1000)) //expiry time is one-day
-		  }
-		  localStorage.setItem('yearData',JSON.stringify(obj));
-		  data = true;
-		  
-	      }
 	  }
+	  if(data == null){
+	      writeYear(sysDateTime.getFullYear());
+	  }
+	  
+      }
+
+      // function
+      function writeYear(year){
+	  document.getElementById("output").textContent = year;
+	  localStorage.removeItem('yearData');
+	  const obj = {
+	      year   : year,
+	      expiry : (sysDateTime.getTime()+(24*60*60*1000)) //expiry time is one-day
+	  }
+	  localStorage.setItem('yearData',JSON.stringify(obj));
       }
       
     </script>
