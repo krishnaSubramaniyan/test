@@ -3,91 +3,80 @@
   <body>
     <h3>Current Time:</h3>
     <pre id="output">Loading...</pre>
+    <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/es5ThfPNokI?si=vr4Cv8gUSAnBFSzr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     <script>
-      let isRunning = false; // Flag to prevent multiple calls
-          yearData = JSON.parse(localStorage.getItem('yearData'));
+      let isRunning = false; // Prevent concurrent fetches
 
-        const sysDateTime = new Date();
-        
-        if (!yearData || (sysDateTime.getTime() > yearData.expiry)) {
-          fetchYear("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
-        } else {
-          document.getElementById("output").textContent = yearData.year;
-        }
-      
-      
-      //api call - now fully synchronized
+      // Check if cached data exists and is valid
+      const cached = JSON.parse(localStorage.getItem("yearData"));
+      const now = new Date().getTime();
+
+      if (!cached || now > cached.expiry) {
+        fetchYear("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
+      } else {
+        document.getElementById("output").textContent = cached.year;
+      }
+
       async function fetchYear(endpoint) {
-        if (isRunning) {
-          console.log("Function already running, skipping...");
-          return;
-        }
-        
+        if (isRunning) return;
         isRunning = true;
-        const sysDateTime = new Date();
-        
+
+        const fallbackYear = new Date().getFullYear();
+        let attempt = 0;
+        const maxAttempts = 200;
+
         try {
-          let requestCount = 0;
-          
-          while (requestCount < 200) {
-            requestCount++;
-            console.log(`Starting attempt ${requestCount}`);
-            
+          while (attempt < maxAttempts) {
+            attempt++;
             try {
+              console.log(`Attempt ${attempt}`);
+
               const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 2000);
-              
-              const res = await fetch(endpoint, { 
-                signal: controller.signal,
-                  method: 'GET'
+              const timeout = setTimeout(() => controller.abort(), 2000);
+
+              const response = await fetch(endpoint, {
+                method: "GET",
+                signal: controller.signal
               });
-              
-              clearTimeout(timeoutId);
-              
-              if (!res.ok) {
-                console.log("NOT OK");
-                throw new Error(`HTTP error! status: ${res.status}`);
+
+              clearTimeout(timeout);
+
+              if (!response.ok) {
+                throw new Error("Bad HTTP response: " + response.status);
               }
-              
-              const data = await res.json();
-              let year = new Date(data.datetime).getFullYear();
-              writeYear(year);
-              console.log(`Success on attempt ${requestCount}`);
-              return; // Exit on success
-              
-            } catch (error) {
-              console.log("CATCH BLOCK");
-              console.warn(`Attempt ${requestCount} failed:`, error.message);
-              
-              // Wait before next iteration - this ensures synchronization
-              if (requestCount < 200) {
-                console.log(`Waiting before next attempt...`);
-                await new Promise(resolve => setTimeout(resolve, 300));
-              }
+
+              const data = await response.json();
+              const year = new Date(data.datetime).getFullYear();
+
+              updateYear(year);
+              console.log(`Success on attempt ${attempt}`);
+              return;
+            } catch (err) {
+              console.warn(`Attempt ${attempt} failed: ${err.message}`);
+              await new Promise(res => setTimeout(res, 300)); // Wait before retry
             }
           }
-          
-          // All attempts failed
-          console.log("All attempts failed, using system time");
-          writeYear(sysDateTime.getFullYear());
-          
+
+          console.warn("All attempts failed. Using fallback.");
+          updateYear(fallbackYear);
+
         } finally {
-          isRunning = false; // Reset flag when done
+          isRunning = false;
         }
       }
-      
-      // function
-      function writeYear(year) {
+
+      function updateYear(year) {
         document.getElementById("output").textContent = year;
-        localStorage.removeItem('yearData');
-        const sysDateTime = new Date();
-        const obj = {
+
+        const now = new Date().getTime();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const cacheData = {
           year: year,
-          expiry: (sysDateTime.getTime() + (24 * 60 * 60 * 1000))
-        }
-        localStorage.setItem('yearData', JSON.stringify(obj));
+          expiry: now + oneDay
+        };
+
+        localStorage.setItem("yearData", JSON.stringify(cacheData));
       }
-      
     </script>
   </body>
 </html>
