@@ -12,7 +12,7 @@
       const now = new Date().getTime();
 
       if (!cached || now > cached.expiry) {
-        fetchYear("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
+        fetchYear("https://worldtimeapi.org/api/timezone/Asia/Kolkata");
       } else {
         document.getElementById("output").textContent = cached.year;
       }
