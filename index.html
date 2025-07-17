@@ -4,52 +4,88 @@
     <h3>Current Time:</h3>
     <pre id="output">Loading...</pre>
     <script>
-      var data = null;
-      let yearData = JSON.parse(localStorage.getItem('yearData'));
-      const sysDateTime = new Date();
+      let isRunning = false; // Flag to prevent multiple calls
+          yearData = JSON.parse(localStorage.getItem('yearData'));
 
-      if(!yearData || (sysDateTime.getTime() > yearData.expiry)){
-	  fetchYear("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
-      }
-      else{
-	  document.getElementById("output").textContent = yearData.year;
-      }
-
-
-      //api call
+        const sysDateTime = new Date();
+        
+        if (!yearData || (sysDateTime.getTime() > yearData.expiry)) {
+          fetchYear("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
+        } else {
+          document.getElementById("output").textContent = yearData.year;
+        }
+      
+      
+      //api call - now fully synchronized
       async function fetchYear(endpoint) {
-	  var requestCount = 0;
-	  while (data == null) {
-              try {
-		  if(requestCount > 200){
-		      break;
-		  }
-		  const res = await fetch(endpoint);
-		  data  = await res.json();
-		  let year = new Date(data.datetime).getFullYear();
-		  writeYear(year);
-		  break;
-
-              } catch (e) {
-		  requestCount++;
-		  await new Promise(resolve => setTimeout(resolve, 300));
-	      }
-	  }
-	  if(data == null){
-	      writeYear(sysDateTime.getFullYear());
-	  }
-	  
+        if (isRunning) {
+          console.log("Function already running, skipping...");
+          return;
+        }
+        
+        isRunning = true;
+        const sysDateTime = new Date();
+        
+        try {
+          let requestCount = 0;
+          
+          while (requestCount < 200) {
+            requestCount++;
+            console.log(`Starting attempt ${requestCount}`);
+            
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 2000);
+              
+              const res = await fetch(endpoint, { 
+                signal: controller.signal,
+                  method: 'GET'
+              });
+              
+              clearTimeout(timeoutId);
+              
+              if (!res.ok) {
+                console.log("NOT OK");
+                throw new Error(`HTTP error! status: ${res.status}`);
+              }
+              
+              const data = await res.json();
+              let year = new Date(data.datetime).getFullYear();
+              writeYear(year);
+              console.log(`Success on attempt ${requestCount}`);
+              return; // Exit on success
+              
+            } catch (error) {
+              console.log("CATCH BLOCK");
+              console.warn(`Attempt ${requestCount} failed:`, error.message);
+              
+              // Wait before next iteration - this ensures synchronization
+              if (requestCount < 200) {
+                console.log(`Waiting before next attempt...`);
+                await new Promise(resolve => setTimeout(resolve, 300));
+              }
+            }
+          }
+          
+          // All attempts failed
+          console.log("All attempts failed, using system time");
+          writeYear(sysDateTime.getFullYear());
+          
+        } finally {
+          isRunning = false; // Reset flag when done
+        }
       }
-
+      
       // function
-      function writeYear(year){
-	  document.getElementById("output").textContent = year;
-	  localStorage.removeItem('yearData');
-	  const obj = {
-	      year   : year,
-	      expiry : (sysDateTime.getTime()+(24*60*60*1000)) //expiry time is one-day
-	  }
-	  localStorage.setItem('yearData',JSON.stringify(obj));
+      function writeYear(year) {
+        document.getElementById("output").textContent = year;
+        localStorage.removeItem('yearData');
+        const sysDateTime = new Date();
+        const obj = {
+          year: year,
+          expiry: (sysDateTime.getTime() + (24 * 60 * 60 * 1000))
+        }
+        localStorage.setItem('yearData', JSON.stringify(obj));
       }
       
     </script>
