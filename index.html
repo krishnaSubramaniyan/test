@@ -10,7 +10,7 @@
       const sysDateTime = new Date();
 
       if(!yearData || (sysDateTime.getTime() > yearData.expiry)){
-	  fetchYear("http://worldtimeapi.org/api/timezone/Asia/Kolkata");
+	  fetchYear("https://worldtimeapi.org/api/timezone/Asia/Kolkata");
 	  fetchYear("https://timeapi.io/api/Time/current/zone?timeZone=Asia/Kolkata");
       }
       else{
@@ -27,7 +27,7 @@
 		    wordtimeapi - data.datetime
 		    timeapi     - data.year
 		  */
-		  if(res.url == "http://worldtimeapi.org/api/timezone/Asia/Kolkata"){
+		  if(res.url == "https://worldtimeapi.org/api/timezone/Asia/Kolkata"){
 		      console.log("i am worldtimeapi");
 		      year = new Date(data.datetime).getFullYear();
 		  }
